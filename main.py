@@ -3,20 +3,26 @@ from nltk.corpus import wordnet as wn
 from pynput import keyboard as kb
 import time
 
-
 rl = 0  
 current_word = []
 typing = True  
+
+def pause_typing(stop):
+    keyboard_listener = pynput.keyboard.Listener(suppress=True)
+    keyboard_listener.start()
+    if stop:
+        keyboard_listener.stop()
 
 def generate_badchar(char):
     i = ord(char)
     j = -1
     while j == i or j < 97 or j > 122:
         j = random.randint(97, 122)
+    print(f"printed badchar {chr(j)}")
     return chr(j)
 
-
 def get_antonym(word):
+    print(f"serching antyonyms for {word}")
     synsets = wn.synsets(word)
     for syn in synsets:
         for lemma in syn.lemmas():
@@ -24,9 +30,9 @@ def get_antonym(word):
                 return random.choice(lemma.antonyms()).name()
     return word
 
-
 def change_word(word):
     global typing, current_word, rl
+    pause_typing(False)
     new_word = get_antonym("".join(word))
     print(new_word)
     if len(new_word) > 1:
@@ -35,7 +41,9 @@ def change_word(word):
             keyboard.press_and_release('backspace') 
         keyboard.write(new_word)
         current_word.clear()
-    new_word.clear()
+    new_word = ""
+    pause_typing(True)
+    typing = True
 
 def on_release(key):
     if key == kb.KeyCode.from_char('0') and keyboard.is_pressed('alt'):
@@ -53,14 +61,14 @@ def on_press(key):
                 wrong_char = generate_badchar(key.char)
                 keyboard.write(wrong_char)
             if random.random() < 0.3:
-                keyboard.press("caps_lock")
+                keyboard.press_and_release("caps_lock")
                 
     except AttributeError:
         pass
 
     if typing and key in {kb.Key.space, kb.Key.tab, kb.Key.enter}:
-        
-        if current_word:
+        rl = 0
+        if current_word and random.random() < 0.50:
             change_word(current_word)
         typing = True  
     elif key == kb.Key.backspace and len(current_word) > 0:
