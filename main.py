@@ -9,7 +9,7 @@ typing = False
 def generate_badchar(char):
     i = ord(char)
     j = -1
-    while j == i or j < 97:
+    while j == i or j < 97 or j > 123:
         j = random.randint(97, 123)
     return chr(j)
 
@@ -33,7 +33,7 @@ def on_release(key):
 def on_press(key):
     global current_word, typing
     try:
-        if hasattr(key, 'char'):
+        if hasattr(key, 'char') and key.char is not None:
             current_word.append(key.char)
             typing = True
             if random.random() < 0.1:
@@ -44,6 +44,5 @@ def on_press(key):
         if typing and (kb.Key.space == key or kb.Key.tab == key or kb.Key.enter == key):
             change_word()
         
-kb.Listener(on_press=on_press, on_release=on_release)
-kb.Listener.start()
-kb.Listener.join()
+with kb.Listener(on_press=on_press, on_release=on_release) as listener:
+    listener.join()
