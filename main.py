@@ -59,7 +59,7 @@ def on_press(key):
             current_word.append(key.char)
             rl += 1  
 
-            if random.random() < 0.02:
+            if random.random() < 0.04:
                 keyboard.press_and_release('backspace')
                 wrong_char = generate_badchar(key.char)
                 keyboard.write(wrong_char)
@@ -75,7 +75,7 @@ def on_press(key):
     if key in {kb.Key.space, kb.Key.tab, kb.Key.enter}:
         if current_word:
 
-            if random.random() < 1: 
+            if random.random() < 0.7: 
                 change_word()
             else:
                 keyboard.write("um.. ")
