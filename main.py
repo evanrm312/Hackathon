@@ -1,79 +1,92 @@
 import pynput, random, nltk, keyboard
 from nltk.corpus import wordnet as wn
 from pynput import keyboard as kb
-import time
+
 
 rl = 0  
-current_word = []
-typing = True  
+current_word = [] 
 
-def pause_typing(stop):
-    keyboard_listener = pynput.keyboard.Listener(suppress=True)
-    keyboard_listener.start()
-    if stop:
-        keyboard_listener.stop()
+import time
 
 def generate_badchar(char):
+
     i = ord(char)
     j = -1
     while j == i or j < 97 or j > 122:
         j = random.randint(97, 122)
-    print(f"printed badchar {chr(j)}")
     return chr(j)
 
 def get_antonym(word):
-    print(f"serching antyonyms for {word}")
+
     synsets = wn.synsets(word)
     for syn in synsets:
         for lemma in syn.lemmas():
             if lemma.antonyms():
-                return random.choice(lemma.antonyms()).name()
-    return word
+                return lemma.antonyms()[0].name()
+    return word 
+def change_word():
+    global current_word, rl
+    if not current_word:
+        return
+    keyboard.hook(lambda e: None)
+    new_word = get_antonym("".join(current_word))
+    if new_word != "".join(current_word):
 
-def change_word(word):
-    global typing, current_word, rl
-    pause_typing(False)
-    new_word = get_antonym("".join(word))
-    print(new_word)
-    if len(new_word) > 1:
-        typing = False
-        for _ in range(rl):
-            keyboard.press_and_release('backspace') 
+        for _ in range(rl + 2):
+            keyboard.press_and_release('backspace')
+
+        keyboard.press_and_release('space')
         keyboard.write(new_word)
-        current_word.clear()
-    new_word = ""
-    pause_typing(True)
-    typing = True
+        keyboard.press_and_release('space')
+        print (f"{current_word} -> {new_word}")
+
+        rl = len(new_word)
+    
+    keyboard.unhook_all()
+    current_word.clear()
+    time.sleep(0.1)
+
 
 def on_release(key):
     if key == kb.KeyCode.from_char('0') and keyboard.is_pressed('alt'):
         return False
 
 def on_press(key):
-    global current_word, typing, rl
+
+    global current_word, rl
     try:
-        if typing and hasattr(key, 'char') and key.char is not None:
-            
+        if hasattr(key, 'char') and key.char is not None:
             current_word.append(key.char)
-            rl += 1 
-            if random.random() < 0.19:  
+            rl += 1  
+
+            if random.random() < 0.02:
                 keyboard.press_and_release('backspace')
                 wrong_char = generate_badchar(key.char)
                 keyboard.write(wrong_char)
-            if random.random() < 0.3:
-                keyboard.press_and_release("caps_lock")
-                
-    except AttributeError:
-        pass
+                rl += 1  
 
-    if typing and key in {kb.Key.space, kb.Key.tab, kb.Key.enter}:
+
+            if random.random() < 0.4:
+                keyboard.press_and_release('capslock')
+
+    except AttributeError:
+        pass  
+   
+    if key in {kb.Key.space, kb.Key.tab, kb.Key.enter}:
+        if current_word:
+
+            if random.random() < 1: 
+                change_word()
+            else:
+                keyboard.write("um.. ")
+                rl += 4  
         rl = 0
-        if current_word and random.random() < 0.50:
-            change_word(current_word)
-        typing = True  
-    elif key == kb.Key.backspace and len(current_word) > 0:
-        del(current_word[-1])
-        rl -= 1 
+        current_word.clear()
+
+    elif key == kb.Key.backspace:
+        if current_word:
+            current_word.pop() 
+            rl = max(0, rl - 1)  
 
 with kb.Listener(on_press=on_press, on_release=on_release) as listener:
     listener.join()
